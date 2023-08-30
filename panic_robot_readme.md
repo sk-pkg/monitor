@@ -15,6 +15,7 @@ go get -u "github.com/sk-pkg/monitor"
 ```json
  "monitor": {
     "panic_robot": {
+      "enable": true,
       "wechat": {
         "enable": true,
         "push_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx"
@@ -29,11 +30,11 @@ go get -u "github.com/sk-pkg/monitor"
 /app/config.go
 ```go
 Monitor struct {
-	Driver     string     `json:"driver"` // 监控驱动
 	PanicRobot PanicRobot `json:"panic_robot"`
 }
 
 PanicRobot struct {
+    Enable bool        `json:"enable"`
 	Wechat robotConfig `json:"wechat"`
 	Feishu robotConfig `json:"feishu"`
 }
@@ -59,7 +60,8 @@ func (a *App) loadMux() {
 // loadPanicRobot 加载panic监控机器人
 func (a *App) loadPanicRobot(mux *gin.Engine) {
     panicRobot, err := monitor.NewPanicRobot(
-        monitor.PanicRobotEnv(os.Getenv(a.Config.System.EnvKey)),
+		monitor.PanicRobotEnable(os.Getenv(a.Config.System.EnvKey)),
+        monitor.PanicRobotEnv(a.Config.Monitor.PanicRobot.Enable),
         monitor.PanicRobotWechatEnable(a.Config.Monitor.PanicRobot.Wechat.Enable),
         monitor.PanicRobotWechatPushUrl(a.Config.Monitor.PanicRobot.Wechat.PushUrl),
         monitor.PanicRobotFeishuEnable(a.Config.Monitor.PanicRobot.Feishu.Enable),
