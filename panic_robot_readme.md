@@ -60,8 +60,8 @@ func (a *App) loadMux() {
 // loadPanicRobot 加载panic监控机器人
 func (a *App) loadPanicRobot(mux *gin.Engine) {
     panicRobot, err := monitor.NewPanicRobot(
-		monitor.PanicRobotEnable(os.Getenv(a.Config.System.EnvKey)),
-        monitor.PanicRobotEnv(a.Config.Monitor.PanicRobot.Enable),
+		monitor.PanicRobotEnable(a.Config.Monitor.PanicRobot.Enable),
+        monitor.PanicRobotEnv(os.Getenv(a.Config.System.EnvKey)),
         monitor.PanicRobotWechatEnable(a.Config.Monitor.PanicRobot.Wechat.Enable),
         monitor.PanicRobotWechatPushUrl(a.Config.Monitor.PanicRobot.Wechat.PushUrl),
         monitor.PanicRobotFeishuEnable(a.Config.Monitor.PanicRobot.Feishu.Enable),
