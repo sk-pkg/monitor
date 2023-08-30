@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +18,7 @@ type (
 	PanicRobotOption func(*panicRobotOption)
 
 	panicRobotOption struct {
+		Enable        bool
 		env           string
 		wechatEnable  bool
 		wechatPushUrl string
@@ -37,6 +38,12 @@ type (
 		PushUrl string
 	}
 )
+
+func PanicRobotEnable(enable bool) PanicRobotOption {
+	return func(o *panicRobotOption) {
+		o.Enable = enable
+	}
+}
 
 func PanicRobotEnv(env string) PanicRobotOption {
 	return func(o *panicRobotOption) {
@@ -75,6 +82,10 @@ func NewPanicRobot(opts ...PanicRobotOption) (*PanicRobot, error) {
 		f(opt)
 	}
 
+	if !opt.Enable {
+		return nil, errors.New("PanicRobot Disable")
+	}
+
 	if opt.wechatEnable && opt.wechatPushUrl == "" {
 		return nil, errors.New("Wechat push url Can not be Null ")
 	}
@@ -107,20 +118,20 @@ func (pr *PanicRobot) Middleware() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				env := spliceStr("Env: ", pr.Env, "\n")
-				pod := spliceStr("Pod: ", pr.HostName, "\n")
+				host := spliceStr("Host: ", pr.HostName, "\n")
 				datetime := spliceStr("Time: ", time.Now().Format("2006-01-02 15:04:05"), "\n")
 				request := spliceStr("Request: ", c.Request.Method, " ", c.Request.URL.Path, "\n")
 				params := spliceStr("Params: ", c.Request.URL.RawQuery, "\n")
 				msg := spliceStr("Panic: ", fmt.Sprintf("%v", err), "\n")
 
-				bodyRaw, _ := ioutil.ReadAll(c.Request.Body)
+				bodyRaw, _ := io.ReadAll(c.Request.Body)
 				body := spliceStr("Body: ", string(bodyRaw), "\n")
 
 				var buf [4096]byte
 				n := runtime.Stack(buf[:], false)
 				stack := string(buf[:n])
 
-				content := spliceStr(env, pod, datetime, request, params, body, msg, stack)
+				content := spliceStr(env, host, datetime, request, params, body, msg, stack)
 
 				go pr.wechatPush(content)
 				go pr.feishuPush(content)
